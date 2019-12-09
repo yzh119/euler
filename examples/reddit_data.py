@@ -52,25 +52,14 @@ def load_data(prefix, normalize=True, load_walks=False):
   ## Make sure the graph has edge train_removed annotations
   ## (some datasets might already have this..)
   print("Loaded data.. now preprocessing..")
-  for edge in G.edges():
-    if (node_types[edge[0]] == 2 or node_types[edge[1]] == 2
-        or node_types[edge[0]] == 3 or node_types[edge[1]] == 3):
-      G[edge[0]][edge[1]]['train_removed'] = True
-    else:
-      G[edge[0]][edge[1]]['train_removed'] = False
-
   return G, feats, id_map, class_map, node_types
 
 
 def node_type_id(node_types, node_id):
   return node_types[node_id] - 1
 
-def edge_type_id(dic):
-  if dic['train_removed']:
-    return 1
-  else:
-    return 0
-
+def one_hot(x, num_classes):
+  return [0.] * x + [1.] + [0.] * (num_classes - 1 - x)
 
 def convert_data(prefix):
   with_weight = False
@@ -78,9 +67,9 @@ def convert_data(prefix):
 
   meta = {
       "node_type_num": 3,
-      "edge_type_num": 2,
+      "edge_type_num": 1,
       "node_uint64_feature_num": 0,
-      "node_float_feature_num": 2,  # 0 for class 1 for features
+      "node_float_feature_num": 2,  # 0 label and 1 for feature
       "node_binary_feature_num": 0,
       "edge_uint64_feature_num": 0,
       "edge_float_feature_num": 0,
@@ -107,10 +96,10 @@ def convert_data(prefix):
     for i in range(0, meta["edge_type_num"]):
       buf["neighbor"][str(i)] = {}
     for n in G[node]:
-      buf["neighbor"][str(edge_type_id(G[node][n]))][str(n)] = 1
+      buf["neighbor"]['0'][str(n)] = 1
     buf["uint64_feature"] = {}
     buf["float_feature"] = {}
-    buf["float_feature"][0] = class_map[node]
+    buf["float_feature"][0] = one_hot(class_map[node], 41)
     buf["float_feature"][1] = list(feats[node])
     buf["binary_feature"] = {}
     buf["edge"] = []
@@ -119,7 +108,7 @@ def convert_data(prefix):
       ebuf = {}
       ebuf["src_id"] = node
       ebuf["dst_id"] = tar
-      ebuf["edge_type"] = edge_type_id(G[node][tar])
+      ebuf["edge_type"] = 0
       ebuf["weight"] = 1
       ebuf["uint64_feature"] = {}
       ebuf["float_feature"] = {}
