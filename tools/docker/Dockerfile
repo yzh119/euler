@@ -12,6 +12,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python-pip \
     python-setuptools \
     wget \
+    git \
+    vim \
     && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
@@ -30,7 +32,7 @@ RUN sh -c 'echo export CLASSPATH=$CLASSPATH:$(hadoop classpath --glob) >> /etc/b
 
 RUN mkdir -p /root/.pip
 COPY tools/docker/pip.conf /root/.pip
-RUN pip --no-cache-dir install tensorflow
+RUN pip --no-cache-dir install scipy==0.16 scikit-learn==0.19 numpy==1.16.1 networkx==1.11 tensorflow==1.12
 
 COPY . /tmp/Euler
 RUN cd /tmp/Euler/third_party/zookeeper && \
